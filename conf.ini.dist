@@ -1,0 +1,9 @@
+graph_api_access_token = 
+graph_api_version = "v12.0/"
+graph_api_base_path = "https://graph.facebook.com/"
+
+file_io_api_key = 
+file_io_base_path = "https://file.io/"
+
+image_name_prefix = "plant-photo-"
+video_name_prefix = "plant-video-"
