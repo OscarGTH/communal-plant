@@ -1,6 +1,7 @@
 # Custom files
 static/*.mp4
 conf.ini
+account_configuration/*.json
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

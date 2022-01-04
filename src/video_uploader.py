@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from parse_config import get_configuration
 import requests
 from datetime import datetime, timedelta
 from logzero import logger
@@ -48,17 +47,3 @@ class VideoUploader:
             # Send request.
             resp = requests.post(url, headers=header, params=payload, files={'file': video})
             print(resp.json())
-
-def main():
-    """ Main entry point of the app """
-    # Get configuration
-    args = get_configuration()
-    # Initialize video uploader
-    vu = VideoUploader(args)
-    # Upload video
-    vu.upload_video()
-
-
-if __name__ == "__main__":
-    """ This is executed when run from the command line """
-    main()
