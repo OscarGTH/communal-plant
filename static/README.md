@@ -1,0 +1,1 @@
+This folder will hold all the video files that will get posted to file.io API.
