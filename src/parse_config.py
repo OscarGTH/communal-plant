@@ -21,6 +21,8 @@ def get_configuration():
           help='prefix for image file')
     p.add('--video_name_prefix', required=True,
           help='prefix for video file')
+    p.add('--database_name', required=True,
+          help='name of sqlite database')
 
     options = p.parse_args()
 

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
+import time
 import requests
 from logzero import logger
 import json
 from pathlib import Path
-
+import sys
 
 
 # Account configuration file path
@@ -44,6 +45,9 @@ class GraphHandler:
                     account_dict = {'page_id': account['id']}
                     # Pushing dict into account info
                     self.info['account'].append(account_dict)
+        else:
+            logger.error(resp.json())
+            sys.exit(0)
 
     def get_business_user_id(self):
         """ Gets Instagram Business User identifier"""
@@ -67,7 +71,6 @@ class GraphHandler:
                         "Received user id " + resp_data['instagram_business_account']['id'])
                     # Setting the received IG user id to the account's dict
                     account['user_id'] = resp_data['instagram_business_account']['id']
-
 
     def create_configuration_files(self):
         """ Creates/updates configuration files for the Instagram account. """
@@ -93,27 +96,59 @@ class GraphHandler:
                 json.dump(conf_data, conf_file, indent=4)
             else:
                 conf_file = open(file_name, 'w')
+                account['hashtags'] = []
+                account['caption'] = []
                 json.dump(account, conf_file, indent=4)
             # Closing file
             conf_file.close()
 
+    def set_up_info(self):
+        """ Fetches information needed for API calls and post publishing """
 
-    def publish_video(self, creation_id, user_id):
-        """ Publishes given video to Instagram account. """
+        self.get_account_info()
+        self.get_business_user_id()
 
-        logger.info("Publishing video.")
-        payload = {'access_token': self.args.graph_api_access_token,
-                   'creation_id': creation_id}
-        url = self.base_url + user_id + "/media_publish"
-        logger.info("Sending POST request to url: " + url)
-        resp = requests.post(url, params=payload)
+    def start_posting_process(self, video_url):
+        """ Starts the process of posting the watering video."""
 
-        if resp.status_code == 200:
-            logger.info("Post successfully published!")
+        # Read configuration file into memory
+        for p in Path(ACCOUNT_CONFIG_PATH).glob('*.json'):
+            # Loading account configuration data into dictionary
+            acc_data = json.loads(p.read_text())
+            # Setting flag to ensure that required information exists.
+            post_valid = True
+            # Creating temporary dict to store individual post related information
+            post_data = dict()
+            post_data['user_id'] = acc_data['user_id']
+            logger.info("Starting posting process.")
+            post_data['video_url'] = video_url
+            post_data['media_type'] = "VIDEO"
+            # Constructing caption for the post.
+            post_data['caption'] = "Temporary video! I am the best programmer!"
+            # self.construct_caption(acc_data)
+
+            # If post is valid, creating media container.
+            if post_valid:
+                self.create_media_container(post_data)
+            else:
+                logger.warning("Skipping publishing video.")
+
+    def construct_caption(self, acc_data):
+        """ Constructs post caption from multiple strings. """
+
+        logger.info("Constructing post caption.")
+        caption = ""
+        if 'caption' in acc_data and acc_data['caption']:
+            caption = ('\n').join(acc_data['caption'])
         else:
-            logger.warning(
-                "Response from video publishing query is not OK.")
-            logger.info(resp.json())
+            logger.warning('Post caption not found.')
+        if 'hashtags' in acc_data and acc_data['hashtags']:
+            # Adding hashtags as space delimited string
+            caption += '\n' * 2 + " ".join(acc_data['hashtags'])
+        else:
+            logger.warning('Post hashtags not found.')
+
+        return caption
 
     def create_media_container(self, post_data):
         """ Creates Instagram media container """
@@ -121,6 +156,7 @@ class GraphHandler:
         logger.info("Creating Instagram media container.")
         # Setting image url and caption to payload
         payload = {'access_token': self.args.graph_api_access_token,
+                   'media_type': post_data['media_type'],
                    'video_url': post_data['video_url'],
                    'caption': post_data['caption']}
         url = self.base_url + post_data['user_id'] + "/media"
@@ -137,54 +173,34 @@ class GraphHandler:
             logger.warning("Creation of media container failed.")
             logger.info(resp.json())
 
-    def set_up_info(self):
-        """ Fetches information needed for API calls and post publishing """
+    def publish_video(self, creation_id, user_id):
+        """ Publishes given video to Instagram account. """
 
-        self.get_account_info()
-        self.get_business_user_id()
+        success = False
+        tries_left = 5
+        while not success and tries_left > 0:
+            logger.info("Starting publishing process.")
+            payload = {'access_token': self.args.graph_api_access_token,
+                       'creation_id': creation_id}
+            url = self.base_url + user_id + "/media_publish"
+            logger.info("Waiting for 15 seconds before publishing.")
+            time.sleep(15)
+            logger.info("Sending POST request to url: " + url)
+            resp = requests.post(url, params=payload)
+            resp_data = resp.json()
 
-
-    def construct_caption(self, acc_data):
-        """ Constructs post caption from multiple strings. """
-
-        logger.info("Constructing post caption.")
-        caption = "Plant test."
-        if 'hashtags' in acc_data and acc_data['hashtags']:
-            # Adding hashtags as space delimited string
-            caption += '\n' * 2 + " ".join(acc_data['hashtags'])
-        else:
-            logger.warning('Post hashtags not found.')
-
-        return caption
-
-    def start_posting_process(self):
-        """ Starts the process of posting the watering video."""
-
-        # Read configuration file into memory
-        for p in Path(ACCOUNT_CONFIG_PATH).glob('*.json'):
-            # Loading account configuration data into dictionary
-            acc_data = json.loads(p.read_text())
-            # Setting flag to ensure that required information exists.
-            post_valid = True
-            # Creating temporary dict to store individual post related information
-            post_data = dict()
-            post_data['user_id'] = acc_data['user_id']
-            logger.info(
-                "Starting posting process.")
-
-            """
-            # Getting video.
-            try:
-                
-            except KeyError as exc:
-                post_valid = False
-            """
-
-            # Constructing caption for the post.
-            post_data['caption'] = self.construct_caption(acc_data)
-
-            # If post is valid, creating media container.
-            if post_valid:
-                self.create_media_container(post_data)
+            if resp.status_code == 200:
+                logger.info("Post successfully published!")
+                break
             else:
-                logger.warning("Skipping publishing video.")
+                # If error code is 9007, it means that media is still loading.
+                if resp_data['code'] == 9007:
+                    logger.warning(resp_data)
+                    logger.info("Sleeping for 40 seconds and trying again.")
+                    tries_left -= 1
+                    time.sleep(40)
+                else:
+                    logger.warning(
+                        "Response from video publishing query is not OK.")
+                    logger.error(resp_data)
+                    break

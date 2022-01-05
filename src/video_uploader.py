@@ -44,6 +44,18 @@ class VideoUploader:
 
         # If video was read, continue.
         if video:
+            file_payload = {'file': ('plant.mp4', video, 'video/mp4')}
             # Send request.
-            resp = requests.post(url, headers=header, params=payload, files={'file': video})
-            print(resp.json())
+            resp = requests.post(url, headers=header, params=payload, files=file_payload)
+            
+            if resp.ok:
+                # Read json response
+                resp_data = resp.json()
+                if 'link' in resp_data:
+                    # Returning video link.
+                    return resp_data['link']
+                else:
+                    logger.error("Link not found in response from File.io")
+                    logger.info(resp_data)
+            else:
+                logger.error(resp.json())

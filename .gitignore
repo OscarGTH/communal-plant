@@ -2,6 +2,8 @@
 static/*.mp4
 conf.ini
 account_configuration/*.json
+.vscode/
+*.db
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

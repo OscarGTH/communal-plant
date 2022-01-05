@@ -7,3 +7,5 @@ file_io_base_path = "https://file.io/"
 
 image_name_prefix = "plant-photo-"
 video_name_prefix = "plant-video-"
+
+database_name = "postdatabase.db"
