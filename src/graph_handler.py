@@ -129,7 +129,7 @@ class GraphHandler:
 
             # If post is valid, creating media container.
             if post_valid:
-                self.create_media_container(post_data)
+                return self.create_media_container(post_data)
             else:
                 logger.warning("Skipping publishing video.")
 
@@ -168,7 +168,7 @@ class GraphHandler:
             # Getting creation id as the response
             creation_id = resp.json()['id']
             # Calling publishing function
-            self.publish_video(creation_id, post_data['user_id'])
+            return self.publish_video(creation_id, post_data['user_id'])
         else:
             logger.warning("Creation of media container failed.")
             logger.info(resp.json())
@@ -191,7 +191,7 @@ class GraphHandler:
 
             if resp.status_code == 200:
                 logger.info("Post successfully published!")
-                break
+                return resp_data
             else:
                 # If error code is 9007, it means that media is still loading.
                 if resp_data['code'] == 9007:
@@ -204,3 +204,23 @@ class GraphHandler:
                         "Response from video publishing query is not OK.")
                     logger.error(resp_data)
                     break
+
+    def get_comments_for_post(self, media_id):
+        """ Fetches the comments for the given post. """
+
+        logger.info("Getting comments for a post.")
+        # Construct url
+        url = self.base_url + media_id + "/comments"
+        payload = {'access_token': self.args.graph_api_access_token}
+
+        resp = requests.get(url, params=payload)
+
+        resp_data = resp.json()
+        if resp.ok and 'data' in resp_data:
+            logger.info(
+                "API response for comments was ok. Returning comment data.")
+            return resp_data
+        else:
+            logger.warning(
+                "Encountered error when fetching comments for a post.")
+            logger.error(resp_data)

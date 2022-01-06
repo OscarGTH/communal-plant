@@ -68,4 +68,31 @@ class DatabaseHandler:
         sql = ("SELECT * FROM posts")
         # Print every row
         for row in self.cur.execute(sql):
-            print(row)
+            logger.info(row)
+
+    def check_if_first_post(self):
+        """ Returns boolean value telling if there are post entries in the table."""
+
+        # Select count of dates from the posts table.
+        sql = ("SELECT count(date) FROM posts")
+        self.cur.execute(sql)
+        # If first row has something, table is not void of entries.
+        if self.cur.fetchone()[0] == 0:
+            return True
+        else:
+            return False
+
+    def get_post_by_date(self, date):
+        """ Returns the media id of post by date. """
+
+        sql = ("SELECT id FROM posts WHERE date = ?")
+        # Execute query.
+        self.cur.execute(sql, (date,))
+        try:
+            # Get first result.
+            media_id = self.cur.fetchone()[0]
+            # Return result.
+            return media_id
+        except TypeError as ex:
+            logger.error("Post not found by given date.")
+            return None
