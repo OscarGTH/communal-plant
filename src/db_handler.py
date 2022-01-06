@@ -18,8 +18,12 @@ class DatabaseHandler:
         self.con.close()
 
     def setup_table(self):
+        """ Creates new table if it doesn't exist. """
+
         self.cur.execute(''' CREATE TABLE IF NOT EXISTS posts
                              (id integer, date text, water_amount integer, vote_count integer) ''')
+        # Commiting changes.
+        self.con.commit()
 
     def check_if_exists(self):
         """ Checks if posts table exists. """
@@ -30,10 +34,10 @@ class DatabaseHandler:
         if self.cur.fetchone()[0] == 1:
             return True
         else:
-            logger.error("Table does not exist in the database.")
+            logger.info("Table does not exist in the database.")
             return False
 
-    def insert_to_database(self, payload):
+    def insert_to_table(self, payload):
         """ Inserts payload into posts database before post is published. """
 
         # Check that table exists.
@@ -70,17 +74,21 @@ class DatabaseHandler:
         for row in self.cur.execute(sql):
             logger.info(row)
 
-    def check_if_first_post(self):
+    def is_first_post(self):
         """ Returns boolean value telling if there are post entries in the table."""
 
-        # Select count of dates from the posts table.
-        sql = ("SELECT count(date) FROM posts")
-        self.cur.execute(sql)
-        # If first row has something, table is not void of entries.
-        if self.cur.fetchone()[0] == 0:
-            return True
+        if self.check_if_exists():
+            # Select count of dates from the posts table.
+            sql = ("SELECT count(date) FROM posts")
+            self.cur.execute(sql)
+            # If count is zero, table has no entries.
+            if self.cur.fetchone()[0] == 0:
+                logger.info("Table has entries.")
+                return True
+            else:
+                return False
         else:
-            return False
+            return True
 
     def get_post_by_date(self, date):
         """ Returns the media id of post by date. """
