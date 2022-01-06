@@ -2,8 +2,9 @@
 
 from datetime import datetime
 from parse_config import get_configuration
-from pump_controller import PumpController
 from video_uploader import VideoUploader
+# TODO: Uncomment this when run on RPi
+# from pump_controller import PumpController
 from graph_handler import GraphHandler
 from db_handler import DatabaseHandler
 from logzero import logger
@@ -17,7 +18,8 @@ class DailyProcess():
         self.dbh = DatabaseHandler(args)
         self.video_uploader = VideoUploader(args)
         self.graph_handler = GraphHandler(args)
-        self.pump_controller = PumpController()
+        # TODO: Uncomment this when run on RPi
+        #self.pump_controller = PumpController()
 
     def start_process(self):
         # Check if it isn't first post.
@@ -59,14 +61,18 @@ class DailyProcess():
         """ Uploads recorded video to File.io and sends it to Instagram. """
 
         logger.info("Running upload process.")
-        # Create helper class objects.
-
         # Get url to uploaded video.
         video_url = self.video_uploader.upload_video()
         if video_url:
             logger.info("Video url is: " + video_url)
-            #media_dict = gh.start_posting_process(video_url)
-            # logger.info(media_dict)
+            media_dict = self.graph_handler.start_posting_process(video_url)
+            logger.info(media_dict)
+            if 'id' in media_dict:
+                logger.info("Updating media id to database.")
+                # Update media id to database post entry.
+                self.dbh.update_media_id(
+                    media_dict['id'], datetime.now().date())
+                self.dbh.get_all()
 
     def run_watering_process(self):
         """ Runs plant watering process. """

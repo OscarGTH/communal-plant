@@ -16,6 +16,12 @@ def get_media_id(dbh):
     return media_id
 
 
+def parse_comments(comments):
+    """ Parses comments and checks which water amount wins the vote."""
+    for comment in comments:
+        logger.info("Comment: " + comment['text'])
+
+
 def main():
     """ Main entry point of the app """
     # Get configuration
@@ -27,7 +33,8 @@ def main():
     if media_id:
         logger.info("Media id received, getting comments for the post.")
         comments = gh.get_comments_for_post(media_id)
-        logger.info(comments)
+        logger.info("Parsing comments.")
+        parse_comments(comments)
     else:
         logger.info(
             "Comments cannot be checked so using default value as water amount.")

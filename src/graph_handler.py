@@ -124,8 +124,7 @@ class GraphHandler:
             post_data['video_url'] = video_url
             post_data['media_type'] = "VIDEO"
             # Constructing caption for the post.
-            post_data['caption'] = "Temporary video! I am the best programmer!"
-            # self.construct_caption(acc_data)
+            post_data['caption'] = self.construct_caption(acc_data)
 
             # If post is valid, creating media container.
             if post_valid:
@@ -139,7 +138,7 @@ class GraphHandler:
         logger.info("Constructing post caption.")
         caption = ""
         if 'caption' in acc_data and acc_data['caption']:
-            caption = ('\n').join(acc_data['caption'])
+            caption = ('\n'*2).join(acc_data['caption'])
         else:
             logger.warning('Post caption not found.')
         if 'hashtags' in acc_data and acc_data['hashtags']:
@@ -210,7 +209,7 @@ class GraphHandler:
 
         logger.info("Getting comments for a post.")
         # Construct url
-        url = self.base_url + media_id + "/comments"
+        url = self.base_url + str(media_id) + "/comments"
         payload = {'access_token': self.args.graph_api_access_token}
 
         resp = requests.get(url, params=payload)
@@ -219,7 +218,7 @@ class GraphHandler:
         if resp.ok and 'data' in resp_data:
             logger.info(
                 "API response for comments was ok. Returning comment data.")
-            return resp_data
+            return resp_data['data']
         else:
             logger.warning(
                 "Encountered error when fetching comments for a post.")
