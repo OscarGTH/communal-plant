@@ -16,21 +16,29 @@ class CameraController:
 
     def __init__(self) -> None:
         self.camera = picamera.PiCamera()
-        self.camera.resolution = (1920, 1080)
-        date = str(datetime.now().date())
-        self.video_file_path = VIDEO_PATH + date
-        self.image_file_path = IMAGE_PATH + date
+        self.camera.resolution = (1296, 730)
+        self.video_file_path = VIDEO_PATH + str(datetime.now().date())
+        self.image_file_path = IMAGE_PATH + str(time.time())
 
-    def record(self, duration):
-        """ Starts recording video for a given duration. """
+    def start_record(self):
+        """ Starts to record video. """
 
         try:
+            # Delete possible video that was taken earlier.
+            logger.info("Deleting previous video if exists.")
+            self.delete_previous_video()
             logger.info("Starting to record video.")
             # Start recording video.
             self.camera.start_recording(self.video_file_path + ".h264")
-            logger.info("Recording for " + str(duration) + " seconds.")
-            # Record for the given duration.
-            self.camera.wait_recording(duration)
+        except Exception as ex:
+            logger.warning("Error happened while recording video.")
+            logger.error(ex)
+
+    def stop_record(self):
+        """ Stops video recording and calls converter function. """
+
+        try:
+            logger.info("Stopping video recording.")
             # Stop recording.
             self.camera.stop_recording()
             # Take a picture of the plant.
@@ -38,7 +46,7 @@ class CameraController:
             # Convert video to mp4 and return result.
             return self.convert_recording_to_mp4()
         except Exception as ex:
-            logger.warning("Error happened while recording video.")
+            logger.warning("Error happened ending video recording.")
             logger.error(ex)
 
     def capture_image(self):
@@ -79,3 +87,12 @@ class CameraController:
         if orig_file.is_file():
             # Remove file.
             os.remove(self.video_file_path + ".h264")
+
+    def delete_previous_video(self):
+        """ Deletes possibly existing mp4 video with the same date. """
+
+        converted_file = Path(self.video_file_path + '.mp4')
+        # Check if file exists.
+        if converted_file.is_file():
+            # Remove file.
+            os.remove(self.video_file_path + ".mp4")

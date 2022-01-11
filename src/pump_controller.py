@@ -2,12 +2,15 @@
 
 import RPi.GPIO as GPIO
 from time import sleep
+from camera_controller import CameraController
+from logzero import logger
 
 
 class PumpController:
     """ Controls the pump motor """
 
     def __init__(self):
+        self.cam = CameraController()
         GPIO.setmode(GPIO.BOARD)
         GPIO.setwarnings(False)
         self.set_gpio_pins()
@@ -22,7 +25,11 @@ class PumpController:
 
     def run_pump_forward(self):
         """ Runs pump motor forward """
+
+        self.cam.start_record()
+        logger.info("Starting pump.")
         self.start_pump()
+        # Set GPIO pins
         GPIO.output(3, False)
         GPIO.output(5, True)
         GPIO.output(7, True)
@@ -35,30 +42,16 @@ class PumpController:
 
     def stop_pump(self):
         """ Stops pump and cleans up."""
+
+        logger.info("Stopping pump.")
         GPIO.output(7, False)
         self.pwm.ChangeDutyCycle(0)
         self.pwm.stop(0)
         GPIO.cleanup()
+        self.cam.stop_record()
 
     def start_pump(self):
         """ Starts pump. """
+
         GPIO.output(7, True)
         self.pwm.ChangeDutyCycle(100)
-
-
-def main():
-    """ Main entry point of the app """
-    # Instantiate the pump controller
-    pc = PumpController()
-    # Run pump forward
-    pc.run_pump_forward()
-    sleep(3)
-    # Run backwards
-    pc.run_pump_backward()
-    sleep(3)
-    pc.stop_pump()
-
-
-if __name__ == "__main__":
-    """ This is executed when run from the command line """
-    main()

@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
 from datetime import datetime
+import time
 from parse_config import get_configuration
 from video_uploader import VideoUploader
-from camera_controller import CameraController
-# TODO: Uncomment this when run on RPi
-# from pump_controller import PumpController
+from pump_controller import PumpController
 from graph_handler import GraphHandler
 from db_handler import DatabaseHandler
 from logzero import logger
@@ -19,8 +18,7 @@ class DailyProcess():
         self.dbh = DatabaseHandler(args)
         self.video_uploader = VideoUploader(args)
         self.graph_handler = GraphHandler(args)
-        # TODO: Uncomment this when run on RPi
-        #self.pump_controller = PumpController()
+        self.pump_controller = PumpController()
 
     def start_process(self):
         # Check if it isn't first post.
@@ -53,7 +51,7 @@ class DailyProcess():
 
         # If watering process succeeded, continue to posting process.
         if self.run_watering_process():
-            if not self.args.dry_run:
+            if self.args.dry_run == "False":
                 logger.info("Continuing to uploading process.")
                 self.run_upload_process()
             else:
@@ -78,15 +76,21 @@ class DailyProcess():
                 self.dbh.update_media_id(
                     media_dict['id'], datetime.now().date())
                 self.dbh.get_all()
+        else:
+            logger.error("Did not receive video url.")
 
     def run_watering_process(self):
         """ Runs plant watering process. """
-        cam = CameraController()
-        logger.info("Beginning recording.")
-        cam.record(5)
-        success = True
-        logger.info("Watering plant.")
-        return success
+
+        logger.info("Starting watering process.")
+        # Starting pump and recording.
+        self.pump_controller.run_pump_forward()
+        # Waiting for 5 seconds.
+        time.sleep(5)
+        # Stopping pump and recording.
+        self.pump_controller.stop_pump()
+        logger.info("Watering process completed.")
+        return True
 
 
 def main():
