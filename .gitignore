@@ -4,6 +4,8 @@ conf.ini
 account_configuration/*.json
 .vscode/
 *.db
+images/*.png
+videos/*.mp4
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

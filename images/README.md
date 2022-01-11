@@ -1,0 +1,1 @@
+This folder contains images taken of the plant after the video has been recorded. These images won't be deleted and can be used for various purposes such as creating timelapses or similar.
