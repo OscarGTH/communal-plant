@@ -3,6 +3,7 @@
 from datetime import datetime
 from parse_config import get_configuration
 from video_uploader import VideoUploader
+#from camera_controller import CameraController
 # TODO: Uncomment this when run on RPi
 # from pump_controller import PumpController
 from graph_handler import GraphHandler
@@ -52,8 +53,11 @@ class DailyProcess():
 
         # If watering process succeeded, continue to posting process.
         if self.run_watering_process():
-            logger.info("Continuing to uploading process.")
-            self.run_upload_process()
+            if not self.args.dry_run:
+                logger.info("Continuing to uploading process.")
+                self.run_upload_process()
+            else:
+                logger.info("Dry run is selected. Publishing will not be performed.")
         else:
             logger.error("Error happened while running watering process.")
 
